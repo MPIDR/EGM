@@ -154,8 +154,6 @@ Figure 2. Completion rates by matching
 This graph shows the share of records in independent population registers that were recorded in the EGM-generated data. In order to obtain this, it was first necessary to recode the EGM-generated data chronologically by the date in which the interview was conducted:
 
 ``` r
-suf_col <- c("#990099", "#009900", "#B01824")
-
 egm_chrono <- ind.q %>% 
   select(int_id = h_id, interview_date, full_id, id81, id08, idall) %>% 
   dplyr::arrange(as.Date(ind.q$interview_date, "%d/%m/%Y"), as.numeric(ind.q$h_id))
@@ -265,11 +263,8 @@ After this, the EGM-records were matched against another independent source of d
 egm_chrono$id_fafg <- NA
 
 for(n in 1:nrow(fafg_linked)) {
-  
   id_cuest <- unlist( strsplit(fafg_linked$id_cuest[n], ";") )
-  
   egm_chrono$id_fafg[match(id_cuest, egm_chrono$full_id)] <- n
-  
 }
 
 col <- paste0("id_fafg")
@@ -308,7 +303,10 @@ df3 <- data.frame(
 df3$point <- NA
 df3$point[seq(5,303,10)] <- df3$rate[seq(5,303,10)]
 
-    df3 %>%
+# Define colour scheme for plot
+suf_col <- c("#990099", "#009900", "#B01824")
+
+df3 %>%
     ggplot(aes(x=id,y=rate, group = Origin
                , shape = Origin
                , colour = Origin
@@ -512,7 +510,7 @@ both <-
 The text also makes reference to dependency ratios, which were computed as follows:
 
 ``` r
-# Get df of all age disributions
+# Get df of all age distributions
 all_df <- lapply(mget(ls(pattern = "^dist[1-4]")), function(df){ 
   df %>% 
     ungroup() %>% 
@@ -551,10 +549,12 @@ ratios <- round(ratios,2)
 At this point, it was possible to compute the Whipple index for the four populations of interest, which was later included in the graph:
 
 ``` r
-ages <- list(rn81=rn81 %>% pull(age_at_census),
-     rn08=rn08 %>% pull(age_at_census),
-     ind81=ind81 %>% pull(age81),
-     ind08=ind08 %>% pull(age08))
+ages <- list(
+  rn81=rn81 %>% pull(age_at_census)
+  , rn08=rn08 %>% pull(age_at_census)
+  , ind81=ind81 %>% pull(age81)
+  , ind08=ind08 %>% pull(age08)
+)
 
 w_index <- lapply(ages, function(x) {
   w <- whipple(round(x), printme = F)
@@ -638,8 +638,6 @@ Figure 4 Conflict mortality profile
 This figure shows the distribution of excess mortality in the village after the 1982 massacres, bot in absolute and relative terms. We initially define the parameters for the analysis
 
 ``` r
-  # Define parameters for analysis
-
 start <- 0
 y_max <- 50
 
@@ -667,7 +665,7 @@ all <-
   na.omit
 ```
 
-The following code estimates the number killed in the 1982 massacres and what share of the population it represented:
+The following code estimates the number killed in the 1982 massacres and what share of the population this represented:
 
 ``` r
 died <-
@@ -827,9 +825,9 @@ links <- lapply(inds,kin_as_net)
 
 # convert to list of network object 
 
-# d describes the edges of the network. Its first two columns are the IDs of the source and the target node for each edge. The following columns are edge attributes (weight, type, label, or anything else).
+# d describes the edges of the network. Its first two columns are the IDs of the source and the target 
+# node for each edge. The following columns are edge attributes (weight, type, label, or anything else).
 # vertices starts with a column of node IDs. Any following columns are interpreted as node attributes.
-# NOTE: THIS IS UNDIRECTED TO CALCULATE DISTANCES!!
 
 net <- lapply(1:100, function(x) {
   l <- links[[x]]
@@ -1233,7 +1231,7 @@ Session information
 
 Report by Diego Alburez-Gutierrez - alburezgutierrez\[at\]demogr.mpg.de; [www.alburez.me](http://alburez.me)
 
-    ## [1] "Report created: 2019-03-14 13:44:13"
+    ## [1] "Report created: 2019-03-14 13:55:30"
 
     ## R version 3.5.1 (2018-07-02)
     ## Platform: x86_64-w64-mingw32/x64 (64-bit)

@@ -93,7 +93,6 @@ In what follows, I show how these datasets were analysed to produce the results 
 This graph shows the share of records in independent population registers that were recorded in the EGM-generated data. In order to obtain this, it was first necessary to recode the EGM-generated data chronologically by the date in which the interview was conducted:
 
 ```{r}
-suf_col <- c("#990099", "#009900", "#B01824")
 
 egm_chrono <- ind.q %>% 
   select(int_id = h_id, interview_date, full_id, id81, id08, idall) %>% 
@@ -205,11 +204,8 @@ After this, the EGM-records were matched against another independent source of d
 egm_chrono$id_fafg <- NA
 
 for(n in 1:nrow(fafg_linked)) {
-  
   id_cuest <- unlist( strsplit(fafg_linked$id_cuest[n], ";") )
-  
   egm_chrono$id_fafg[match(id_cuest, egm_chrono$full_id)] <- n
-  
 }
 
 col <- paste0("id_fafg")
@@ -249,7 +245,10 @@ df3 <- data.frame(
 df3$point <- NA
 df3$point[seq(5,303,10)] <- df3$rate[seq(5,303,10)]
 
-    df3 %>%
+# Define colour scheme for plot
+suf_col <- c("#990099", "#009900", "#B01824")
+
+df3 %>%
     ggplot(aes(x=id,y=rate, group = Origin
                , shape = Origin
                , colour = Origin
@@ -452,7 +451,7 @@ The text also makes reference to dependency ratios, which were computed as follo
 
 ```{r}
 
-# Get df of all age disributions
+# Get df of all age distributions
 all_df <- lapply(mget(ls(pattern = "^dist[1-4]")), function(df){ 
   df %>% 
     ungroup() %>% 
@@ -492,10 +491,12 @@ At this point, it was possible to compute the Whipple index for the four populat
 
 ```{r}
    
-ages <- list(rn81=rn81 %>% pull(age_at_census),
-     rn08=rn08 %>% pull(age_at_census),
-     ind81=ind81 %>% pull(age81),
-     ind08=ind08 %>% pull(age08))
+ages <- list(
+  rn81=rn81 %>% pull(age_at_census)
+  , rn08=rn08 %>% pull(age_at_census)
+  , ind81=ind81 %>% pull(age81)
+  , ind08=ind08 %>% pull(age08)
+)
 
 w_index <- lapply(ages, function(x) {
   w <- whipple(round(x), printme = F)
@@ -566,7 +567,6 @@ chisq.test(x = all_df$pop_rn08, p = all_df$share_inde08)
 This figure shows the distribution of excess mortality in the village after the 1982 massacres, bot in absolute and relative terms. We initially define the parameters for the analysis
 
 ```{r}
-  # Define parameters for analysis
 
 start <- 0
 y_max <- 50
@@ -595,7 +595,7 @@ all <-
   na.omit
 ```
 
-The following code estimates the number killed in the 1982 massacres and what share of the population it represented:
+The following code estimates the number killed in the 1982 massacres and what share of the population this represented:
 
 ```{r}
 died <-
@@ -749,9 +749,9 @@ links <- lapply(inds,kin_as_net)
 
 # convert to list of network object 
 
-# d describes the edges of the network. Its first two columns are the IDs of the source and the target node for each edge. The following columns are edge attributes (weight, type, label, or anything else).
+# d describes the edges of the network. Its first two columns are the IDs of the source and the target 
+# node for each edge. The following columns are edge attributes (weight, type, label, or anything else).
 # vertices starts with a column of node IDs. Any following columns are interpreted as node attributes.
-# NOTE: THIS IS UNDIRECTED TO CALCULATE DISTANCES!!
 
 net <- lapply(1:100, function(x) {
   l <- links[[x]]
