@@ -128,7 +128,7 @@ individuals08 %>% head %>% kable
 |        5|    2|  20.37260|
 |        6|    2|  17.72877|
 
-The `fafg_linked` dataset is a transformed version of the list of Rio Negro massacre victims made available by the Guatemalan Forensic Anthropology Foundation (FAFG) [link](http://fafg.org/bd/l_victima2.php?boton=1&fuente=2&limit_i_victima=0&dep_id_muni%5B%5D=26&id_muni%5B%5D=282&lugar_lp=&no_pager=1). The data was linked with the EGM-generated records using record linkage methods (the linkage code is not included in the script).
+The `fafg_linked` dataset is a transformed version of the list of Rio Negro massacre victims made available by the Guatemalan Forensic Anthropology Foundation (FAFG) ([link](http://fafg.org/bd/l_victima2.php?boton=1&fuente=2&limit_i_victima=0&dep_id_muni%5B%5D=26&id_muni%5B%5D=282&lugar_lp=&no_pager=1)). The data was linked with the EGM-generated records using record linkage methods (the linkage code is not included in the script).
 
 ``` r
 fafg_linked %>% head %>% kable
@@ -146,7 +146,7 @@ fafg_linked %>% head %>% kable
 Reproducing results from the paper
 ==================================
 
-In what follows, I show how these datasets were analysed to produce the results reported in the paper.
+In what follows, I show how these datasets were analysed to produce the results reported in the paper. Note that the code will not work using only the sample datasets included in the EGM package. Resarchers interested in replicating any particular section of the analysis are encouraged to contact the author.
 
 Figure 2. Completion rates by matching
 --------------------------------------
@@ -801,13 +801,13 @@ rm(list=ls(pattern = "^res[0-9]"))
 
 min_birth_year <- 1960
 
-# 7.1. Social distacne 
+# 7.1. Social distance 
 
 # 7.1.1. Get social distance from ego to respondent
 
 # Interviews as networks
 
-# split ind.q_temp into individuals dfs and keep as list
+# split ind.q depending on the household of the interview
 inds <- split(ind.q,ind.q$h_id)
 
 # create nodes df
@@ -869,8 +869,6 @@ distance_to_respondent <-
       paths <- shortest_paths(gr, 
                               from = respondent, 
                               to = V(gr)
-                              # , mode = "in"
-                              # , mode = "out"
                               , mode = "all"
       )
     )
@@ -897,7 +895,6 @@ heaping <-
     DoB_y = year(dmy(DoB)),
     age_fieldwork = 2016-DoB_y
   ) %>%
-  # group_by(distance_to_respondent) %>% 
   group_by(distance_ntile) %>%
   dplyr::summarise(
     w_reproductive = 
@@ -961,7 +958,6 @@ heaping <-
     DoB_y = year(dmy(DoB)),
     age_fieldwork = 2016-DoB_y
   ) %>%
-  # group_by(distance_to_respondent) %>% 
   group_by(alive) %>%
   dplyr::summarise(
     w_reproductive = 
@@ -989,7 +985,6 @@ missing <-
     by.y = "ind_id",
     all.x = T
   ) %>% 
-  # group_by(distance_to_respondent) %>% 
   group_by(alive) %>%
   dplyr::summarise(
     mother_NA = round(sum(mother_NA, na.rm = T)/n()*100, 1),
@@ -1236,9 +1231,9 @@ plot.pedigree(p['1']
 Session information
 ===================
 
-Report by Diego Alburez-Gutierrez - <alburezgutierrez@demogr.mpg.de>; [www.alburez.me](http://alburez.me)
+Report by Diego Alburez-Gutierrez - alburezgutierrez\[at\]demogr.mpg.de; [www.alburez.me](http://alburez.me)
 
-    ## [1] "Report created: 2019-03-14 13:31:28"
+    ## [1] "Report created: 2019-03-14 13:44:13"
 
     ## R version 3.5.1 (2018-07-02)
     ## Platform: x86_64-w64-mingw32/x64 (64-bit)

@@ -7,7 +7,7 @@ About this repository
 
 This repository provides all the resources needed to reproduce the results of the study:
 
-Alburez-Gutierrez, Diego (2019) Blood is thicker than bloodshed: A genealogical approach to reconstruct populations after armed conflicts, *Demographic Research*.
+Alburez-Gutierrez, Diego (2019) Blood is thicker than bloodshed: A genealogical approach to reconstruct populations after armed conflicts, *Demographic Research* (in press).
 
 The repository contains the source code of the `EGM` R package (EGM stands for Extended Genealogy Method). The package contains the R functions used to analyse the data collected by the author in the village of Rio Negro (2015-2016). It can be downloaded from RStudio using the `devtools` package in R:
 
@@ -26,4 +26,4 @@ The directory [3_questionnaires](3_questionnaires) contains the questionnaires u
 Get involved!
 -------------
 
-Researchers interested in using the data for academic analysis or learning more about the Extended Genealogy Method (EGM) developed in this paper can contact Diego Alburez at: alburezgutierrez\[at\]demogr.mpg.de.
+Researchers interested in using the data for academic analysis or learning more about the Extended Genealogy Method (EGM) can contact Diego Alburez at: alburezgutierrez\[at\]demogr.mpg.de.
