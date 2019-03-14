@@ -17,7 +17,9 @@ The repository contains the source code of the `EGM` R package (EGM stands for E
   library(EGM)    
 ```
 
-The directory [1_reproducible_results](1_reproducible_results) of this repository includes the full code needed to reproduce the results, figures, and tables presented in the paper. The data used in this study is not included in the `EGM` package or in this repository given privacy concerns. However, this directory gives details about the structure of the data to the degree needed to understand how the analysis was conducted. 
+The directory [1_reproducible_results](1_reproducible_results) of this repository includes the full code needed to reproduce the results, figures, and tables presented in the paper. 
+The data used in this study is not included in the `EGM` package or in this repository in order to protect the privacy of the respondents.
+However, this directory gives details about the structure of the data to the degree needed to understand how the analysis was conducted. 
 
 The directory [2_appendix_a](2_appendix_a) gives more detail about how the participants for the study were selected and the genealogical data managed. This document can be built in RStudio and requires the `EGM` package described above.
 
