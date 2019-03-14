@@ -21,7 +21,7 @@ This document presents the code needed to reproduce the empirical analysis, figu
 After installation, the package can be loaded, together with the other packages needed for the analysis (see version numbers and other technical details at the end of this document):
 
 ``` r
-library(EGM.confidential)
+library(EGM)
 
 library(igraph)
 library(ggplot2)
@@ -36,7 +36,7 @@ library(knitr)
 Structure of the data
 ---------------------
 
-The microdata data from Rio Negro cannot be shared in full given privacy concerns. The raw data includes sensitive information such as date of birth, date of death, and kinship ties, which could be used to uniquely identify members of the population. Nevertheless, this section provides a brief overview of the seven datasets referenced in the code below. Note that the datasets presented in this section is for illustrative purposes and only include the columns referenced in the anlaysis.
+The microdata data from Rio Negro cannot be shared in full given privacy concerns. The raw data includes sensitive information such as date of birth, date of death, and kinship ties, which could be used to uniquely identify members of the population. Nevertheless, this section provides a brief overview of the seven datasets referenced in the code below. Note that the datasets included in the EGM package are for illustrative purposes and only include the columns referenced in the analysis.
 
 The first dataset, `paradata`, records information data about the EGM interviews themselves, such as household id, unique id of the respondent, number of relatives reported, etc.
 
@@ -98,7 +98,7 @@ yearly_nets %>% tail %>% kable
 | 70511 |  3565|  2016|                     13|                      3|
 | 70512 |  3566|  2016|                     13|                      3|
 
-The analysis below also uses data from secondary sources. This was used to check the quality of the demographic information collected using the EGM. The `individuals81` dataset records the 1978 census cOnducted by INDE power company in Rio Negro before the killings. (It is referred to as '81' because the census report was published in 1981.)
+The analysis below also uses data from secondary sources. This was used to check the quality of the demographic information collected using the EGM. The `individuals81` dataset records the 1978 census conducted by INDE power company in Rio Negro before the killings. (It is referred to as '81' because the census report was published in 1981.)
 
 ``` r
 individuals81 %>% head %>% kable
@@ -146,7 +146,7 @@ fafg_linked %>% head %>% kable
 Reproducing results from the paper
 ==================================
 
-In what follows, I show how these datasets were analysed to produce the reuslts reported in the paper.
+In what follows, I show how these datasets were analysed to produce the results reported in the paper.
 
 Figure 2. Completion rates by matching
 --------------------------------------
@@ -339,7 +339,7 @@ df3$point[seq(5,303,10)] <- df3$rate[seq(5,303,10)]
     )
 ```
 
-<img src="readme_files/figure-markdown_github/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
+<img src="readme_files/figure-markdown_github/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
 
 Figure 3. Compare to local censuses of 1981 and 2008 census
 -----------------------------------------------------------
@@ -606,9 +606,9 @@ both %>%
       )
 ```
 
-<img src="readme_files/figure-markdown_github/unnamed-chunk-18-1.png" style="display: block; margin: auto;" />
+<img src="readme_files/figure-markdown_github/unnamed-chunk-19-1.png" style="display: block; margin: auto;" />
 
-The text also references other ways in which the EGM-generated data was compared to the local census data as a way of checking for data quality. These included comparinng the population distributions for all sexes combined. This was done for the INDE census of 1981:
+The text also references other ways in which the EGM-generated data was compared to the local census data as a way of checking for data quality. These included comparing the population distributions for all sexes combined. This was done for the INDE census of 1981:
 
 ``` r
 chisq.test(x = all_df$pop_rn81, p = all_df$share_inde81)
@@ -635,7 +635,7 @@ chisq.test(x = all_df$pop_rn08, p = all_df$share_inde08)
 Figure 4 Conflict mortality profile
 -----------------------------------
 
-This figure shows the distribution of excess mortality in the village after the 1982 massacres, bot in absolute and relative terms. We initially definie the parameters for the analysis
+This figure shows the distribution of excess mortality in the village after the 1982 massacres, bot in absolute and relative terms. We initially define the parameters for the analysis
 
 ``` r
   # Define parameters for analysis
@@ -719,12 +719,12 @@ died_df %>%
   theme(legend.position = "bottom")
 ```
 
-<img src="readme_files/figure-markdown_github/unnamed-chunk-24-1.png" style="display: block; margin: auto;" />
+<img src="readme_files/figure-markdown_github/unnamed-chunk-25-1.png" style="display: block; margin: auto;" />
 
 Figure 5. Family size over time
 -------------------------------
 
-This figure represents the average number of relatives alive by birth cohort for inhabitants of RIo Negro on a yearly basis. The analysis is relatively straightforward as the yearly number of relatives was estimated beforehand from the `final` dataset and saved to the `yearly_nets` data frame, which is used in the code below. The code to create the latter is not included in this vignette but is available upon request.
+This figure represents the average number of relatives alive by birth cohort for inhabitants of Rio Negro on a yearly basis. The analysis is relatively straightforward as the yearly number of relatives was estimated beforehand from the `final` dataset and saved to the `yearly_nets` data frame, which is used in the code below. The code to create the latter is not included in this vignette but is available upon request.
 
 ``` r
 # Define parameters for analysis
@@ -783,7 +783,7 @@ fam_size_df    %>%
     theme(legend.position = "bottom")
 ```
 
-<img src="readme_files/figure-markdown_github/unnamed-chunk-26-1.png" style="display: block; margin: auto;" />
+<img src="readme_files/figure-markdown_github/unnamed-chunk-27-1.png" style="display: block; margin: auto;" />
 
 Table 1. EGM data quality and completeness by characteristics of reported individual.
 -------------------------------------------------------------------------------------
@@ -1071,7 +1071,7 @@ res3 <-
   arrange(desc(origin_local))
 ```
 
-The fourth chunk focuses on the role of the interview lenght, measured as the number of records produced in each interview:
+The fourth chunk focuses on the role of the interview length, measured as the number of records produced in each interview:
 
 ``` r
 # 7.4. By interview length ####
@@ -1231,14 +1231,14 @@ plot.pedigree(p['1']
 )
 ```
 
-<img src="readme_files/figure-markdown_github/unnamed-chunk-32-1.png" style="display: block; margin: auto;" />
+<img src="readme_files/figure-markdown_github/unnamed-chunk-33-1.png" style="display: block; margin: auto;" />
 
 Session information
 ===================
 
 Report by Diego Alburez-Gutierrez - <alburezgutierrez@demogr.mpg.de>; [www.alburez.me](http://alburez.me)
 
-    ## [1] "Report created: 2019-03-14 10:56:09"
+    ## [1] "Report created: 2019-03-14 13:31:28"
 
     ## R version 3.5.1 (2018-07-02)
     ## Platform: x86_64-w64-mingw32/x64 (64-bit)
@@ -1258,9 +1258,10 @@ Report by Diego Alburez-Gutierrez - <alburezgutierrez@demogr.mpg.de>; [www.albur
     ## 
     ## other attached packages:
     ##  [1] kinship2_1.6.4         quadprog_1.5-5         Matrix_1.2-14         
-    ##  [4] knitr_1.21             plyr_1.8.4             lubridate_1.7.4       
-    ##  [7] stringr_1.3.1          purrr_0.3.0            dplyr_0.8.0.1         
-    ## [10] ggplot2_3.1.0          igraph_1.2.2           EGM.confidential_0.1.0
+    ##  [4] EGM.confidential_0.1.0 knitr_1.21             plyr_1.8.4            
+    ##  [7] lubridate_1.7.4        stringr_1.3.1          purrr_0.3.0           
+    ## [10] dplyr_0.8.0.1          ggplot2_3.1.0          igraph_1.2.2          
+    ## [13] EGM_0.1.0             
     ## 
     ## loaded via a namespace (and not attached):
     ##  [1] Rcpp_1.0.0       pillar_1.3.1     compiler_3.5.1   highr_0.7       
