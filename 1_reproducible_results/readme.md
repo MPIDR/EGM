@@ -3,12 +3,12 @@ Reproducible results and figures
 
 -   [Structure of the data](#structure-of-the-data)
 -   [Reproducing results from the paper](#reproducing-results-from-the-paper)
-    -   [Figure 2. Completion rates by matching](#figure-2.-completion-rates-by-matching)
-    -   [Figure 3. Compare to local censuses of 1981 and 2008 census](#figure-3.-compare-to-local-censuses-of-1981-and-2008-census)
-    -   [Figure 4 Conflict mortality profile](#figure-4-conflict-mortality-profile)
-    -   [Figure 5. Family size over time](#figure-5.-family-size-over-time)
-    -   [Table 1. EGM data quality and completeness by characteristics of reported individual.](#table-1.-egm-data-quality-and-completeness-by-characteristics-of-reported-individual.)
-    -   [Figure 1. Genealogical diagram](#figure-1.-genealogical-diagram)
+    -   [Figure 2. Genealogical saturation estimated by matching EGM-generated records with list of victims and with census records](#figure-2.-genealogical-saturation-estimated-by-matching-egm-generated-records-with-list-of-victims-and-with-census-records)
+    -   [Figure 3. Age-sex structure of the Rio Negro population - Comparing genealogical data with census records](#figure-3.-age-sex-structure-of-the-rio-negro-population---comparing-genealogical-data-with-census-records)
+    -   [Figure 4 Age-sex distribution of massacre-derived mortality in Rio Negro reconstructed from EGM data](#figure-4-age-sex-distribution-of-massacre-derived-mortality-in-rio-negro-reconstructed-from-egm-data)
+    -   [Figure 5. Size of egocentric kinship network in Rio Negro over time by sex and age group (1980-2015)](#figure-5.-size-of-egocentric-kinship-network-in-rio-negro-over-time-by-sex-and-age-group-1980-2015)
+    -   [Table 1. Data quality and completeness of EGM-generated data: An evaluation of four potential sources of bias](#table-1.-data-quality-and-completeness-of-egm-generated-data-an-evaluation-of-four-potential-sources-of-bias)
+    -   [Figure 1. Hypothetical genealogy demonstrating the logic of the EGM chain-referral sampling](#figure-1.-hypothetical-genealogy-demonstrating-the-logic-of-the-egm-chain-referral-sampling)
 -   [Session information](#session-information)
 
 This document presents the code needed to reproduce the empirical analysis, figures, and tables presented in the paper "Blood is thicker than bloodshed: A genealogical approach to reconstruct populations after armed conflicts". using the data collected in Rio Negro. The package `EGM` is needed to reproduce the results of this study. It can be downloaded from Github using the `devtools` package in R:
@@ -148,8 +148,8 @@ Reproducing results from the paper
 
 In what follows, I show how these datasets were analysed to produce the results reported in the paper. Note that the code will not work using only the sample datasets included in the EGM package. Resarchers interested in replicating any particular section of the analysis are encouraged to contact the author.
 
-Figure 2. Completion rates by matching
---------------------------------------
+Figure 2. Genealogical saturation estimated by matching EGM-generated records with list of victims and with census records
+--------------------------------------------------------------------------------------------------------------------------
 
 This graph shows the share of records in independent population registers that were recorded in the EGM-generated data. In order to obtain this, it was first necessary to recode the EGM-generated data chronologically by the date in which the interview was conducted:
 
@@ -339,8 +339,8 @@ df3 %>%
 
 <img src="readme_files/figure-markdown_github/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
 
-Figure 3. Compare to local censuses of 1981 and 2008 census
------------------------------------------------------------
+Figure 3. Age-sex structure of the Rio Negro population - Comparing genealogical data with census records
+---------------------------------------------------------------------------------------------------------
 
 This figure compared the distribution of the Rio Negro population using EGM and census data from 1981 and 2008.
 
@@ -632,8 +632,8 @@ chisq.test(x = all_df$pop_rn08, p = all_df$share_inde08)
     ## data:  all_df$pop_rn08
     ## X-squared = 10.989, df = 7, p-value = 0.1391
 
-Figure 4 Conflict mortality profile
------------------------------------
+Figure 4 Age-sex distribution of massacre-derived mortality in Rio Negro reconstructed from EGM data
+----------------------------------------------------------------------------------------------------
 
 This figure shows the distribution of excess mortality in the village after the 1982 massacres, bot in absolute and relative terms. We initially define the parameters for the analysis
 
@@ -719,8 +719,8 @@ died_df %>%
 
 <img src="readme_files/figure-markdown_github/unnamed-chunk-25-1.png" style="display: block; margin: auto;" />
 
-Figure 5. Family size over time
--------------------------------
+Figure 5. Size of egocentric kinship network in Rio Negro over time by sex and age group (1980-2015)
+----------------------------------------------------------------------------------------------------
 
 This figure represents the average number of relatives alive by birth cohort for inhabitants of Rio Negro on a yearly basis. The analysis is relatively straightforward as the yearly number of relatives was estimated beforehand from the `final` dataset and saved to the `yearly_nets` data frame, which is used in the code below. The code to create the latter is not included in this vignette but is available upon request.
 
@@ -783,8 +783,8 @@ fam_size_df    %>%
 
 <img src="readme_files/figure-markdown_github/unnamed-chunk-27-1.png" style="display: block; margin: auto;" />
 
-Table 1. EGM data quality and completeness by characteristics of reported individual.
--------------------------------------------------------------------------------------
+Table 1. Data quality and completeness of EGM-generated data: An evaluation of four potential sources of bias
+-------------------------------------------------------------------------------------------------------------
 
 Table 1 shows different measures of data quality for the EGM data. The columns of the table refer to:
 
@@ -1185,8 +1185,8 @@ print(dfs)
     ## 1            1  104.           114.      16.4    4.7    2.6
     ## 2            4  102.           104.      13.4    2.9    1.2
 
-Figure 1. Genealogical diagram
-------------------------------
+Figure 1. Hypothetical genealogy demonstrating the logic of the EGM chain-referral sampling
+-------------------------------------------------------------------------------------------
 
 Finally, although not a result of the study per se, the genealogical diagram presented as Figure 1 in the paper can be reproduced using the `kinship2` package in R:
 
@@ -1231,7 +1231,7 @@ Session information
 
 Report by Diego Alburez-Gutierrez - alburezgutierrez\[at\]demogr.mpg.de; [www.alburez.me](http://alburez.me)
 
-    ## [1] "Report created: 2019-03-14 13:55:30"
+    ## [1] "Report created: 2019-03-14 17:42:29"
 
     ## R version 3.5.1 (2018-07-02)
     ## Platform: x86_64-w64-mingw32/x64 (64-bit)
