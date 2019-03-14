@@ -5,7 +5,7 @@ Diego Alburez-Gutierrez
 About this repository
 ---------------------
 
-This repository provides all the resources needed to reproduce the results of the study:
+This repository provides the code needed to reproduce the results of the study:
 
 Alburez-Gutierrez, Diego (2019) Blood is thicker than bloodshed: A genealogical approach to reconstruct populations after armed conflicts, *Demographic Research* (in press).
 
