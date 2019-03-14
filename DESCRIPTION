@@ -1,0 +1,20 @@
+Package: EGM
+Type: Package
+Title: EGM Data from Rio Negro and Functions for Analysing It
+Version: 0.1.0
+Author@R: c(
+    person("Anonymous", "Author", email = "", role = c("aut", "cre") )
+	)
+Description: Supplementary material for paper Alburez-Gutierrez, Diego 'Blood is thicker than bloodshed: a genealogical approach to reconstruct populations after armed conflicts', Demographic Research.
+Depends: R (>= 3.5.1)
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    kinship2,
+	reshape2,
+	tidyverse
+RoxygenNote: 6.1.1
+Suggests: 
+    knitr,
+    rmarkdown

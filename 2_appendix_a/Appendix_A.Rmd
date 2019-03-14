@@ -1,0 +1,526 @@
+---
+title: "Appendix A^[Supplementary material for the paper 'Blood is thicker than bloodshed: a genealogical approach to reconstruct populations after armed conflicts'. The appendix is fully reproducible and can be compiled from the 'Appendix_A.Rmd' file using R Markdown [@Allaire2018]. The source file includes detailed comments on the data and figures used for the appendix.]"
+subtitle: "Participant selection and genealogical data management"
+author: ""
+output:
+  bookdown::pdf_document2:
+    number_sections: yes
+    fig_caption: yes
+    toc: no
+header-includes: 
+    - \usepackage{setspace}\doublespacing
+    - \usepackage{subfig}
+indent: true
+tables: yes
+bibliography: appendix.bib
+csl: DemRes.csl
+---
+
+```{r installation, eval = F, include = F}
+# Install EGM R package from Github
+library(devtools)
+install_github("alburezg/EGM", dep = FALSE)
+```
+
+```{r packages, include = F}
+# Load needed packages
+library(EGM)
+library(tidyverse)
+library(kinship2)
+library(reshape2)
+
+library(bookdown)
+library(knitr)
+library(kableExtra)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warnings = FALSE, message = FALSE, fig.pos = 'H')
+```
+
+\noindent This appendix provides a detailed account of how the participants were selected and their data managed in the process of reconstructing the historical population of Rio Negro using the Extended Genealogy Method (EGM). The first section describes how the genealogical population was delimited and respondents for the seed and subsequent interviews identified. The second section summarises how the primary genealogical data was recorded and transformed to obtain cross-sectional population data.
+
+# Defining the population of interest
+
+Determining who counted as a member of the population was necessary for delimiting the data collection and producing a saturated family network in Rio Negro. The study aimed to reconstruct the population alive in 1981 (before the mass killings), and all of their descendants and ascendants who ever lived between 1960 and 2015. Table \@ref(tab:Table1) shows the distribution of vital events in the EGM-generated data over time. 
+
+```{r Table1, echo = F, warning=F}
+
+# Define parameters for birth cohorts
+custom_interval <- seq(1920, max(final$DoB, na.rm = T), 20)
+labs <- c("<1920","1920-1939", "1940-1959","1960-1979", "1980-1999", "2000-2015")
+
+# Date of birth of EGM population
+
+birth <- 
+  final %>% 
+  dplyr::mutate(Cohort = cut(DoB, c(-Inf, custom_interval, Inf), right = F, labels = labs)) %>%
+  dplyr::count(Cohort, sex2) %>% 
+  spread(sex2, n)
+
+birth$Total <- rowSums(birth[2:4], na.rm = T)
+
+# Date of death of EGM population
+
+death <- 
+  final %>% 
+    dplyr::filter(alive == 0) %>% 
+  dplyr::mutate(Cohort = cut(DoD, c(-Inf, custom_interval, Inf), right = F, labels = labs)) %>%
+  dplyr::count(Cohort, sex2) %>% 
+    tidyr::complete(Cohort, fill = list(n = 0)) %>%
+  spread(sex2, n)
+
+death$Total <- rowSums(death[2:4], na.rm = T)
+
+mer <- merge(birth, death, by = "Cohort") %>% 
+  mutate_all(as.character) 
+
+mer[ , -1][is.na(mer[ , -1])] <- 0
+
+mer[8, ] <- c("Total", colSums(mutate_all(mer[ , -1], as.numeric) ))
+
+# Edit columns names
+colnames(mer)[1] <- ""
+colnames(mer) <- gsub("\\.[x-y]", "", colnames(mer))
+
+# Ensure NA's are printed as Unknown
+colnames(mer)[colnames(mer) == "<NA>"] <-  "Sex unknown"
+mer[is.na(mer)] <- "Date unknown"
+
+# Print table
+knitr::kable(mer
+      , caption = "Vital events in EGM-reconstructed population by sex and year of occurrence"
+      , booktabs = TRUE
+      ) %>% 
+  kable_styling("basic", latex_options = "HOLD_position") %>%
+  add_header_above(c(" " = 1, "Number of reported births" = 4, "Number of reported deaths" = 4))
+
+```
+
+Data on older individuals was needed to identify kinship relations between members of the population. These records increased the ancestry depth of the genealogical data (the average number of ancestors known for every individual). The measure of ancestry depth can be used to summarise the degree to which family relations can be established in a genealogical population. An ancestry depth of two is the minimal required to identify grandparents, grandchildren, cousins, aunts, and uncles.^[An ego with known parents and grandparents has an ancestry depth of two: one step from ego to parents, another step from parents to grandparents.]  Figure \@ref(fig:Figure1) shows that an ancestry depth of two was available for 70% of the inhabitants of Rio Negro in the EGM-reconstructed population. This means that members of the extended family could be identified for two thirds of the population. Ancestry depth was lowest for individuals in the older birth cohorts, meaning that cousins and other parents' siblings could usually not be identified for the oldest members of the population. This was a direct result of the way in which the population was defined since information about the parents of the oldest members of the population was not recorded to limit the scope of the data collection.
+
+```{r Figure1, echo = F, out.extra = '', fig.width=5, fig.height=4, , fig.align = "center", fig.cap="Generational depth in EGM-generated data for Rio Negro"}
+
+# The function 'gen_depth' estimates the ancestry depth for all members of a genealogical population
+# in terms of 'ascent', 'descent', and the sum of both ('generational depth')
+
+ depths_all <- as.data.frame( do.call(rbind, lapply(final$ind_id, gen_depth) ) )
+
+# Edit and aggregate for plotting
+
+depths_all <- 
+  depths_all %>%
+  dplyr::mutate_all(list(~factor), levels = 0:5) 
+  
+depths <- 
+as.data.frame( sapply(depths_all, table) ) %>% 
+    select(Combined = all, Descent = down, Ancestry = up) %>% 
+    rownames_to_column %>% 
+    dplyr::filter(rowname != 0) %>% 
+    arrange(desc(rowname)) %>% 
+    select(-rowname) %>% 
+    dplyr::mutate_all(list(~cumsum)) %>% 
+  dplyr::mutate(freq = factor(rev(c(paste0(1:4, "+"), 5)))) %>% 
+    reshape2::melt(id = "freq") %>% 
+    dplyr::mutate(
+      value = as.numeric(value)/nrow(depths_all) * 100,
+      Relationship = factor(variable, c("Combined", "Ancestry", "Descent"))
+      )  
+
+# Plot
+
+labs <- c("Ancestry and descent", "Ancestry only", "Descent only")
+
+    depths %>% 
+    ggplot(aes(x = freq, y = value, group = Relationship,
+               shape = Relationship)) +
+      geom_line(size = 0.5) +
+      geom_point(size = 2) +
+      xlab("Known generational depth") +
+      ylab("Share of population") +
+      scale_shape_discrete("", labels = labs) +
+      theme_bw() +
+      theme(legend.position = "bottom")   
+      
+    
+```
+
+The EGM interviews were conducted following a common set of guidelines. Respondents were initially asked to recall the complete marriage and birth histories of their parents (which included information about their siblings and themselves). The respondents then provided data on their own marriage and birth history. The procedure was later repeated to record the genealogical information of the respondent's siblings and children. Data on childless marriages was also recorded, along with the demographic information of present and past partners. However, no data about the partners' own families was recorded. Data on a respondent's husband was included in the questionnaire (e.g. date of birth, death, etc.) but not on the respondent's mother-in-law as this information was collected in later interviews. Data on the relatives of spouses from other communities (i.e. whose ancestry could not be traced to the 1981 Rio Negro population) was not relevant for the study. Applying these criteria consistently made it possible to delimit the population horizontally.^[A genealogical population grows horizontally when collecting more data increases its size but not its generational depth.] The next step was to define an appropriate sampling strategy to collect the genealogical data.
+
+# Seed selection and chain-referral sampling
+
+Participants for the study were selected using a chain-referral sampling methodology [@Platt2015], a form of non-probabilistic network sampling in which new respondents were drawn from the pool of known records. The selection of the respondents for the initial genealogical interviews (the 'seed respondents') was a central component of this process. Two seed interviews were conducted with respondents that (a) resided in the village, (b) had been born before the 1982 killings, (c) possessed extensive genealogical knowledge, and (d) were not closely related to each other. These criteria, combined with practical considerations of access, helped narrow down the pool of potential seed respondents. 
+
+It was straightforward to determine eligibility based on the first two criteria - posterior analysis showed that 141 women and 125 men met criteria (a)-(b) at the time of the data collection. Criterion (b) reduced the pool of potential seed respondents to those aged over 34 in 2015. The chosen seed respondents were 53 and 61 years of age respectively. Previous studies have shown that older individuals tend to have more extensive kinship knowledge, but are less-well informed about recent events (e.g. vital events related to their grandchildren) [@Chang2016]. Younger respondents, on the other hand, are more knowledgeable about contemporary events, but are less able to recollect episodes from the more distant past. The final pool of respondents included individuals in various age groups (Table \@ref(tab:Table2)).
+
+The third criterion required a definition of 'kinship knowledge'. Primary qualitative data was used for this, in the absence of other baseline data on the population. Direct observation and unstructured interviews were conducted to identify members of the population who were locally known for their extensive knowledge of the community and its history. This reduced the number of potential seed respondents and helped improve the quality of the seed interviews by making sure that the initial respondents were capable of answering the questions in the EGM questionnaire with confidence.
+
+The fourth criterion required knowledge of the kinship relations between potential seed respondents. Establishing these links was challenging without pre-existing genealogical data. During the screening process, pairs of potential seed respondents were asked if they were related to each other in any way. The approach was useful, but kinship relations were sometimes not known or not acknowledged by participants. Two individuals were defined as 'close relatives' in this study if there were less than six degrees of separation between them in the genealogical network of the village.^[The shortest path between two nodes was estimated as the minimal number of steps required to get from one member of the family network to the other. The shortest path between siblings was two; between cousins, four.] This selection criterion was introduced to ensure that interviews with seed respondents provided data on separate segments of the village's genealogy. Post-hoc analysis showed that the shortest path between the two chosen seed respondents was indeed six. The extended genealogies that grew out of the two seed interviews only converged after the thirteenth interview, when data on more than 1,000 individuals (roughly one third of all the members of the population) had already been recorded in the genealogical dataset.
+
+Previous work on social network sampling has pointed out that the selection of seed respondents can bias the final composition of the population if seeds have a higher-than-average degree (i.e. more connections than other members of the social network) [@Platt2015]. This is a genuine concern for networks of friendship or other types of social relations, but Table \@ref(tab:Table2) shows that it was not the case in this study. Seed respondents in this study did not have considerably larger families (nuclear or extended) than the rest of the population.
+
+```{r Table2, echo = F}
+
+seeds <- c(1, 334)
+
+# ID values of all respondents can be found by merging the paradata and ind.q datasets
+
+resp_id <- 
+  merge(
+    paradata %>% dplyr::mutate(respondent_full = paste(h_id, respondent1, sep = "_")),
+    ind.q,
+    by.x = "respondent_full",
+    by.y = "full_id",
+    all.x = T
+  ) %>% 
+  pull(idall) %>% 
+  na.omit
+
+resp_data <- 
+  final %>% 
+  dplyr::filter(ind_id %in% c(resp_id, seeds)) %>% # add seed respondents
+  select(ind_id, sex2, DoB)
+
+# get 1982 family size
+
+df82 <- 
+  yearly_nets %>%
+  dplyr::filter(year == 1981) %>%
+  select(ego, nuc = relatives_alive_nuc, ext = relatives_alive_ext)
+
+colnames(df82)[2:3] <- paste0(colnames(df82)[2:3], "_81")
+
+resp_data <-merge(
+  resp_data,
+  df82,
+  by.x = c("ind_id"), 
+  by.y = c("ego"), 
+  all.x = T
+  )
+
+# get 1982 family size
+
+df15 <- 
+  yearly_nets %>%
+  dplyr::filter(year == 2015) %>%
+  select(ego, nuc = relatives_alive_nuc, ext = relatives_alive_ext)
+
+colnames(df15)[2:3] <- paste0(colnames(df15)[2:3], "_15")
+
+# Merge
+
+resp_all <-merge(
+  resp_data,
+  df15,
+  by.x = c("ind_id"), 
+  by.y = c("ego"), 
+  all.x = T
+  )
+
+# Get values for seed respondents
+
+summary_data <- resp_all %>% dplyr::filter(ind_id %in% seeds)
+
+# Get averages values of all respondents
+
+av <- do.call(cbind, 
+lapply(resp_all, function(col) {
+  if(is.numeric(col)) median(col, na.rm = T)
+  else NA
+})
+)
+
+summary_data[3, ] <- av
+
+# Add number of individuals reported in each interview
+
+members <- paradata %>% 
+  dplyr::filter(!is.na(no_u_members)) %>% 
+  pull(no_u_members)
+
+m_seeds <- members[1:2]
+m_rest <- median(members[-c(1,2)])
+
+summary_data$reported <- c(m_seeds, m_rest)
+
+# Table edits
+
+summary_data$ind_id <- c("Seed 1", "Seed 2", "All other (median)")
+colnames(summary_data) <- c("", "","", "Nuclear", "Extended", "Nuclear", "Extended", "")
+
+# Ensure NA's are printed as <NA>
+summary_data[is.na(summary_data)] <- "<NA>"
+
+# Print table
+
+kable(summary_data
+      , caption = "Demographic characteristics of seed respondents and other respondents in the EGM interviews"
+      , booktabs = T
+      ) %>% 
+  kable_styling("basic", latex_options = "HOLD_position") %>%
+  add_header_above(c(
+    " " = 1, "Sex" = 1, "Birth" = 1, "Family size 1981" = 2, 
+    "Family size 2015" = 2, "Individuals reported" = 1)
+    )
+
+
+```
+
+Respondents for the second wave of interviews were drawn from the genealogical data produced by the two seed interviews. All the subsequent respondents in the study fulfilled criteria (a)-(c) presented above. Participants in most interviews provided information about the current location and availability of potential future respondents. They also helped spread information about the study. Direct observation suggested that potential participants were more willing to take part in an interview if they had heard about the study in advance from a relative. Conducting the interviews in the local language was also key because most older respondents and many women  were Maya Achi monolingual speakers.
+
+The participant selection can be illustrated using EGM-generated data from Rio Negro. Figure \@ref(fig:Figure2) shows the ego-centric genealogy collected from one of the seed respondents. The seed respondent (id = A) had only one surviving sibling in 2015 (id = C).^[The o symbol indicates that an individual had already died when the data was collected] Since the demographic information of C had already been collected during the interview with the seed respondent, the next logical step was to conduct an interview with the wife of C (id = B). The interview with B produced redundant information about her children (who had already been recorded in the seed interview with A) and new information about her parents, siblings, nephews, and nieces. The choice of next participant was clear in this case since all other siblings of the seed respondent had already died when the interview was conducted. In other cases, participant selection also considered practical and logistic issues related to access.
+
+```{r Figure2, echo = F, out.extra = '', fig.cap="Genealogical diagram of individuals reported in the second seed interview"}
+
+famid <- 2 # Second seed interview
+ego_col <- 14
+next_col <- 3
+
+# Function 'get_pedigree' is used to transform the genealogical data 
+# to a pedigree format and format it for plotting
+
+p <- get_pedigree(famid, ind.q, final, plot = F, highlight = c(ego_col, next_col))
+
+# Edit colour in plot
+p$colour <- ifelse(p$colour != 1, 1, 1)
+p$colour[ego_col] <- 2
+p$colour[next_col] <- 3
+
+p1 <- p$ped['1']
+
+# Plot pedigree
+
+id <- rep("", length(p$colour))
+id[c(ego_col, next_col, 1)] <- LETTERS[1:3]
+
+size <- 0.7
+cex <- 0.8
+    
+plot.pedigree(p1
+              # , id = rep("", length(p$colour))
+              , id = id
+              , col = p$colour
+              , symbolsize = size
+              # , mar = c(1,1,1,1)
+              , mar = c(0,1,1,1)
+              )
+
+pos1 <- par('usr') 
+
+legend(pos1[1] + 1,pos1[4] , c("Seed responent", "Next respondent"), fill = c(2,3), 
+       cex = cex, xpd = NA)
+
+```
+
+Interviewing the spouse of a previous respondent was generally discouraged. The two respondents could not always be considered 'independent' sources, especially as couples were often interviewed together. Therefore, the redundant data produced by separate interviews with spouses would have not have been useful to evaluate data consistency or data quality. It was also not advisable to conduct multiple interviews in the same household since relatives living in the household were usually present during the interviews and occasionally contributed to the genealogical interviews themselves.
+
+Transcribing and matching the genealogical records in the field was an essential component of the data collection process. Data from the EGM questionnaires was transcribed and processed using interactive Shiny apps [@Poletta2014], which were used to link the new records with those in the existing genealogical pool. Data consistency was evaluated each time a new genealogical record was added to the database. Automated R Markdown reports were produced to summarise the current state of the data collection and highlight potential conflicts, inconsistencies, or gaps in the data. These preliminary findings were discussed in regular meetings with the research assistants of the study to make efficient choices about respondents for future interviews.
+
+# Data management
+
+The EGM uses the principles of relational database design to record kinship relations. The 'Individuals Module' and the 'Marriages Module' (see Appendix B) are tables linked by ID fields that uniquely identify cases. Tables \@ref(tab:Table3) and \@ref(tab:Table4) show how a hypothetical genealogy would be recorded in this tabular format (the header colours clarify how the fields are linked across the tables). The 'Individuals Module Table' includes two columns that register the marriages associated with an individual. The `ParentMarriageID` field refers to the ID of the marriage formed by both parents of the individual. The field `CoupleMarriageID` refers to the ID(s) of the marriage(s) between the individual and their partner(s). A corresponding relational field is included in the 'Marriages Module Table'.
+
+```{r Table3, echo = F}
+
+ind <- data.frame(
+  IndividualID = 1:7,
+  IndividualName = LETTERS[1:7],
+  ParentMarriageID = c(2, "-", "-",1, "-", "-",1),
+  CoupleMarriageID = c(3, 3, 2, 2, 1, 1, "-"),
+  `...` = rep("...", 7)
+) 
+
+# Ensure NA's are printed as <NA>
+ind[is.na(ind)] <- "<NA>"
+
+# Colour headings
+
+names(ind)[1] <- cell_spec(names(ind)[1], background = "pink")
+names(ind)[2] <- cell_spec(names(ind)[2], background = "green")
+names(ind)[3] <- cell_spec(names(ind)[3], background = "yellow")
+names(ind)[4] <- cell_spec(names(ind)[4], background = "yellow")
+
+ind %>% 
+kable(booktabs = T
+      , caption = "Individuals Module Table"
+      , escape = FALSE
+      ) %>% 
+  # column_spec(1:3) %>%
+  kable_styling("bordered", latex_options = "HOLD_position")
+
+```
+
+```{r Table4, echo = F}
+
+marr <- data.frame(
+  `MarriageID` = sort(rep(1:3, 2)),
+  `..............` = rep(c("Partner 1", "Partner 2"), 3),
+  `IndividualID` = c(5, 6, 3, 4, 1, 2),
+  `IndividualName` = c("E", "F", "C", "D", "A", "B"),
+  `...` = rep("...", 6)
+)
+  
+  # Ensure NA's are printed as <NA>
+marr[is.na(marr)] <- "<NA>"
+
+# Colour headings
+
+names(marr)[1] <- cell_spec(names(marr)[1], background = "yellow")
+names(marr)[2] <- cell_spec(names(marr)[2], background = "pink")
+names(marr)[3] <- cell_spec(names(marr)[3], background = "pink")
+names(marr)[4] <- cell_spec(names(marr)[4], background = "green")
+
+marr %>% 
+kable(booktabs = T
+      , caption = "Marriages Module Table"
+      , escape = FALSE
+      ) %>% 
+  # column_spec(1:3) %>%
+  kable_styling("bordered", latex_options = "HOLD_position") %>% 
+  collapse_rows(columns = 1, valign = "middle") 
+
+```
+
+Two intentional sources of redundancy were included in the EGM design to reduce human input error. The two `*MarriageID` fields in the 'Individuals Module' records the same kinship information as the `IndividualID` field in the 'Marriages Module Table'. Including the forenames of the spouses in the 'Marriages Module Table' provided an additional way of ensuring consistency across the two tables. Simple algorithms can be used to transform the relational tables to more common genealogical or social network formats. ^[See the R Markdown version of this document.]
+
+# Obtaining cross-sectional population data from EGM-generated genealogies
+
+The data produced by the EGM can be used to produce 'pseudo-censuses' of the population at specific points in time. In its simplest form, cross-sectional sub-populations can be extracted from the genealogical data by filtering only the individuals that survived through a given period. The variables required for filtering the population in this way (date of birth and date of death) are available from the genealogical data. Pseudo-censuses can only be carried out after fully de-duplicating the EGM-generated records to avoid artificially inflating population size or over-representing the size of age groups. This method is also subject to error in the absence of time-variant data on the location of individuals at the time of the pseudo-census.
+
+These  'demographic snapshots' provide valuable information on the size and composition of the population over time. Table \@ref(tab:Table5), produced using the `pseudo_census` function from the EGM R package, shows this breakdown for Rio Negro in five selected years (1981, 1983, 1993, 2003, and 2013). The table gives the exact size of each demographic group at any given year, making it possible to compare the distribution of the population over time. The data, for example, shows that Rio Negro has been a young population historically. The share of adults over 45 years of age has been consistently small, whilst children under 15 constituted a clear majority before the year 2003. There were signs of a potential population ageing after this year, with the population under 15 constituting a smaller share of the total population by 2013. The table evidences a clear dip in total population size in 1982, resulting from the Rio Negro Massacres. According to the genealogical data, 38% of the pre-conflict population was killed in 1982 (366 of the 970 original inhabitants of the village), as discussed in the main text.
+
+```{r Table5, echo = F, out.extra = ''}
+
+years <- c(1981, 1983, 1993, 2003, 2013)
+
+# Parameters to create age groups
+
+y_max <-80
+by <- 5
+
+cuts <- c(seq(0,y_max,by))
+  
+labels <- c( paste0(0, "-", by-1), paste( seq(by,y_max - by, by), seq(by + by - 1,y_max, by), sep =  "-"), paste0(y_max, "+"))  
+  
+# View(pseudo_census)
+
+df_l <- lapply(years, pseudo_census, final, cuts, labels)
+
+censuses <- data.frame(do.call(cbind, df_l)) %>% 
+  dplyr::mutate(Age = labels) %>%
+  select(Age, everything())
+
+colnames(censuses) <- c("Age", rep(c("Female", "Male"), length(years)))
+
+censuses[nrow(censuses) + 1 , ] <- c("Total",colSums(censuses[2:ncol(censuses)], na.rm = T))
+
+censuses %>% 
+  knitr::kable(
+      caption = "Age and sex distribution of Rio Negro population: pseudo-censuses of the genealogical data for selected years"
+      , booktabs = TRUE
+      ) %>% 
+  kable_styling("basic", latex_options = "HOLD_position") %>%
+  add_header_above(c("Year" = 1, "1981" = 2, "1983" = 2, "1993" = 2, "2003" = 2, "2013" = 2)) %>% 
+  footnote("Table produced with simplified filtering criteria; numbers are illustrative.", footnote_as_chunk = T)
+
+```
+
+# References
+
+\setlength{\parindent}{-0.5in}
+\setlength{\leftskip}{0.5in}
+\setlength{\parskip}{8pt}
+\noindent
+
+```{r session, include = F, echo=T}
+# Session information
+devtools::session_info()
+
+# Session info --------------------------------------------------------------------------------------------------------
+#  setting  value                       
+#  version  R version 3.5.1 (2018-07-02)
+#  system   x86_64, mingw32             
+#  ui       RStudio (1.1.453)           
+#  language (EN)                        
+#  collate  English_United States.1252  
+#  tz       Europe/Berlin               
+#  date     2018-11-23                  
+# 
+# Packages ------------------------------------------------------------------------------------------------------------
+#  package     * version date       source                       
+#  assertthat    0.2.0   2017-04-11 CRAN (R 3.5.1)               
+#  backports     1.1.2   2017-12-13 CRAN (R 3.5.0)               
+#  base        * 3.5.1   2018-07-02 local                        
+#  bindr         0.1.1   2018-03-13 CRAN (R 3.5.1)               
+#  bindrcpp      0.2.2   2018-03-29 CRAN (R 3.5.1)               
+#  bookdown    * 0.7     2018-02-18 CRAN (R 3.5.1)               
+#  broom         0.5.0   2018-07-17 CRAN (R 3.5.1)               
+#  cellranger    1.1.0   2016-07-27 CRAN (R 3.5.1)               
+#  cli           1.0.0   2017-11-05 CRAN (R 3.5.1)               
+#  colorspace    1.3-2   2016-12-14 CRAN (R 3.5.1)               
+#  compiler      3.5.1   2018-07-02 local                        
+#  crayon        1.3.4   2017-09-16 CRAN (R 3.5.1)               
+#  curl          3.2     2018-03-28 CRAN (R 3.5.1)               
+#  datasets    * 3.5.1   2018-07-02 local                        
+#  devtools    * 1.13.6  2018-06-27 CRAN (R 3.5.1)               
+#  digest        0.6.16  2018-08-22 CRAN (R 3.5.1)               
+#  dplyr       * 0.7.6   2018-06-29 CRAN (R 3.5.1)               
+#  EGM         * 0.1.0   2018-11-23 Github (alburezg/EGM@352d5b9)
+#  evaluate      0.11    2018-07-17 CRAN (R 3.5.1)               
+#  forcats     * 0.3.0   2018-02-19 CRAN (R 3.5.1)               
+#  ggplot2     * 3.0.0   2018-07-03 CRAN (R 3.5.1)               
+#  git2r         0.23.0  2018-07-17 CRAN (R 3.5.1)               
+#  glue          1.3.0   2018-07-17 CRAN (R 3.5.1)               
+#  graphics    * 3.5.1   2018-07-02 local                        
+#  grDevices   * 3.5.1   2018-07-02 local                        
+#  grid          3.5.1   2018-07-02 local                        
+#  gtable        0.2.0   2016-02-26 CRAN (R 3.5.1)               
+#  haven         1.1.2   2018-06-27 CRAN (R 3.5.1)               
+#  hms           0.4.2   2018-03-10 CRAN (R 3.5.1)               
+#  htmltools     0.3.6   2017-04-28 CRAN (R 3.5.1)               
+#  httr          1.3.1   2017-08-20 CRAN (R 3.5.1)               
+#  jsonlite      1.5     2017-06-01 CRAN (R 3.5.1)               
+#  kableExtra  * 0.9.0   2018-05-21 CRAN (R 3.5.1)               
+#  kinship2    * 1.6.4   2015-08-03 CRAN (R 3.5.1)               
+#  knitr       * 1.20    2018-02-20 CRAN (R 3.5.1)               
+#  lattice       0.20-35 2017-03-25 CRAN (R 3.5.1)               
+#  lazyeval      0.2.1   2017-10-29 CRAN (R 3.5.1)               
+#  lubridate     1.7.4   2018-04-11 CRAN (R 3.5.1)               
+#  magrittr      1.5     2014-11-22 CRAN (R 3.5.1)               
+#  Matrix      * 1.2-14  2018-04-13 CRAN (R 3.5.1)               
+#  memoise       1.1.0   2017-04-21 CRAN (R 3.5.1)               
+#  methods     * 3.5.1   2018-07-02 local                        
+#  modelr        0.1.2   2018-05-11 CRAN (R 3.5.1)               
+#  munsell       0.5.0   2018-06-12 CRAN (R 3.5.1)               
+#  nlme          3.1-137 2018-04-07 CRAN (R 3.5.1)               
+#  pillar        1.3.0   2018-07-14 CRAN (R 3.5.1)               
+#  pkgconfig     2.0.2   2018-08-16 CRAN (R 3.5.1)               
+#  plyr          1.8.4   2016-06-08 CRAN (R 3.5.1)               
+#  purrr       * 0.2.5   2018-05-29 CRAN (R 3.5.1)               
+#  quadprog    * 1.5-5   2013-04-17 CRAN (R 3.5.0)               
+#  R6            2.2.2   2017-06-17 CRAN (R 3.5.1)               
+#  Rcpp          0.12.18 2018-07-23 CRAN (R 3.5.1)               
+#  readr       * 1.1.1   2017-05-16 CRAN (R 3.5.1)               
+#  readxl        1.1.0   2018-04-20 CRAN (R 3.5.1)               
+#  reshape2    * 1.4.3   2017-12-11 CRAN (R 3.5.1)               
+#  rlang         0.2.2   2018-08-16 CRAN (R 3.5.1)               
+#  rmarkdown     1.10    2018-06-11 CRAN (R 3.5.1)               
+#  rprojroot     1.3-2   2018-01-03 CRAN (R 3.5.1)               
+#  rstudioapi    0.7     2017-09-07 CRAN (R 3.5.1)               
+#  rvest         0.3.2   2016-06-17 CRAN (R 3.5.1)               
+#  scales        1.0.0   2018-08-09 CRAN (R 3.5.1)               
+#  stats       * 3.5.1   2018-07-02 local                        
+#  stringi       1.1.7   2018-03-12 CRAN (R 3.5.0)               
+#  stringr     * 1.3.1   2018-05-10 CRAN (R 3.5.1)               
+#  tibble      * 1.4.2   2018-01-22 CRAN (R 3.5.1)               
+#  tidyr       * 0.8.1   2018-05-18 CRAN (R 3.5.1)               
+#  tidyselect    0.2.4   2018-02-26 CRAN (R 3.5.1)               
+#  tidyverse   * 1.2.1   2017-11-14 CRAN (R 3.5.1)               
+#  tools         3.5.1   2018-07-02 local                        
+#  utils       * 3.5.1   2018-07-02 local                        
+#  viridisLite   0.3.0   2018-02-01 CRAN (R 3.5.1)               
+#  withr         2.1.2   2018-03-15 CRAN (R 3.5.1)               
+#  xfun          0.3     2018-07-06 CRAN (R 3.5.1)               
+#  xml2          1.2.0   2018-01-24 CRAN (R 3.5.1)               
+#  yaml          2.2.0   2018-07-25 CRAN (R 3.5.1)    
+```
